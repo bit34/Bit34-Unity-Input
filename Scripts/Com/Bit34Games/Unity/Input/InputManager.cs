@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 
 namespace Com.Bit34Games.Unity.Input
 {
-    public class InputManager2
+    public class InputManager
     {
         //	MEMBERS
         public static bool UsingMouse
@@ -21,14 +21,14 @@ namespace Com.Bit34Games.Unity.Input
             }
         }
         //      Internal
-        private static int                           _colliderMask;
-        private static bool                          _uiBlocksPointers;
-        private static float                         _clickCancelMovement;
-        private static float                         _clickCancelTimeout;
-        private static InputManagerComponent         _component;
-        private static LinkedList<PointerInputData2> _pointers;
-        private static List<IPointerInputHandler>    _pointerHandlers;
-        private static PointerInputData2             _mousePointerData;
+        private static int                          _colliderMask;
+        private static bool                         _uiBlocksPointers;
+        private static float                        _clickCancelMovement;
+        private static float                        _clickCancelTimeout;
+        private static InputManagerComponent        _component;
+        private static LinkedList<PointerInputData> _pointers;
+        private static List<IPointerInputHandler>   _pointerHandlers;
+        private static PointerInputData             _mousePointerData;
 
         //  METHODS
         public static void Initialize()
@@ -51,12 +51,12 @@ namespace Com.Bit34Games.Unity.Input
             _clickCancelMovement = clickCancelMovement;
             _clickCancelTimeout  = clickCancelTimeout;
 
-            GameObject updaterObject = new GameObject("[InputManager2]");
+            GameObject updaterObject = new GameObject("[InputManager]");
             GameObject.DontDestroyOnLoad(updaterObject);
             _component = updaterObject.AddComponent<InputManagerComponent>();
             _component.Init(UpdateMethod);
 
-            _pointers        = new LinkedList<PointerInputData2>();
+            _pointers        = new LinkedList<PointerInputData>();
             _pointerHandlers = new List<IPointerInputHandler>();
 
             if (UsingMouse)
@@ -75,15 +75,33 @@ namespace Com.Bit34Games.Unity.Input
             _pointerHandlers.Remove(inputHandler);
         }
 
+        public static bool GetPointerPosition(int pointerId, out Vector2 startPosition, out Vector2 currentPosition)
+        {
+            PointerInputData pointerData = GetPointerData(pointerId);
+            if (pointerData != null)
+            {
+                startPosition  = pointerData.StartPosition;
+                currentPosition = pointerData.CurrentPosition;
+                return true;
+            }
+            startPosition = Vector2.zero;
+            currentPosition = Vector2.zero;
+            return false;
+        }
+
         public static void Internal_ObjectDestroyed(InputObjectComponent inputObject)
         {
-            LinkedListNode<PointerInputData2> pointerNode = _pointers.First;
+            LinkedListNode<PointerInputData> pointerNode = _pointers.First;
             while(pointerNode != null)
             {
                 if (pointerNode.Value.ObjectUnder == inputObject.gameObject)
                 {
                     pointerNode.Value.UpdateObjectUnder(null);
+
+                    //  Pointer leaves destroyed object
                     SendPointerLeave(pointerNode.Value.pointerId, pointerNode.Value.CurrentPosition, null);
+                    
+                    //  Cancel click when object destroyed??
                 }
                 pointerNode = pointerNode.Next;
             }
@@ -141,7 +159,7 @@ namespace Com.Bit34Games.Unity.Input
      
         private static void InitMouse()
         {
-            _mousePointerData = new PointerInputData2(PointerInputConstants.MOUSE_POINTER_ID, DateTime.UtcNow, Vector2.zero, null);
+            _mousePointerData = new PointerInputData(PointerInputConstants.MOUSE_POINTER_ID, DateTime.UtcNow, Vector2.zero, null);
             _mousePointerData.ClickCanceled();
             _pointers.AddLast(_mousePointerData);
         }
@@ -165,7 +183,7 @@ namespace Com.Bit34Games.Unity.Input
             {
                 //  Should not be tracked?
                 if (_uiBlocksPointers && 
-                    (EventSystem.current!=null && EventSystem.current.IsPointerOverGameObject(buttonId)))
+                    (EventSystem.current!=null && EventSystem.current.IsPointerOverGameObject()))
                 {
                     return;
                 }
@@ -175,7 +193,7 @@ namespace Com.Bit34Games.Unity.Input
             else 
             if (UnityEngine.Input.GetMouseButtonUp(buttonId))
             {
-                PointerInputData2 pointerData = GetPointerData(pointerId);
+                PointerInputData pointerData = GetPointerData(pointerId);
                 if (pointerData != null)
                 {
                     RemovePointer(pointerData, newPosition, newObjectUnderPointer);
@@ -183,7 +201,7 @@ namespace Com.Bit34Games.Unity.Input
             }
             else
             {
-                PointerInputData2 pointerData = GetPointerData(pointerId);
+                PointerInputData pointerData = GetPointerData(pointerId);
                 if (pointerData != null)
                 {
                     UpdatePointer(pointerData, newPosition, newObjectUnderPointer);
@@ -196,9 +214,9 @@ namespace Com.Bit34Games.Unity.Input
 #region Pointer Methods
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static PointerInputData2 GetPointerData(int pointerId)
+        private static PointerInputData GetPointerData(int pointerId)
         {
-            LinkedListNode<PointerInputData2> pointerNode = _pointers.First;
+            LinkedListNode<PointerInputData> pointerNode = _pointers.First;
             while (pointerNode != null)
             {
                 if (pointerNode.Value.pointerId == pointerId)
@@ -212,18 +230,18 @@ namespace Com.Bit34Games.Unity.Input
 
         private static void CreatePointer(int pointerId, Vector2 newPosition, GameObject newObjectUnderPointer)
         {
-            PointerInputData2 pointerData = new PointerInputData2(pointerId, DateTime.UtcNow, newPosition, newObjectUnderPointer);
+            PointerInputData pointerData = new PointerInputData(pointerId, DateTime.UtcNow, newPosition, newObjectUnderPointer);
             _pointers.AddLast(pointerData);
 
             //  Pointer started on an object
             if(newObjectUnderPointer != null)
             {
 //XX                SendPointerEnter(pointerId, newPosition, newObjectUnderPointer);
-                SendPointerDown(pointerId, newPosition, newObjectUnderPointer);
             }
+            SendPointerDown(pointerId, newPosition, newObjectUnderPointer);
         }
 
-        private static void RemovePointer(PointerInputData2 pointerData, Vector2 newPosition, GameObject newObjectUnderPointer)
+        private static void RemovePointer(PointerInputData pointerData, Vector2 newPosition, GameObject newObjectUnderPointer)
         {
 //XX            if (pointerData.ObjectUnder != null)
 //XX            {
@@ -243,22 +261,31 @@ namespace Com.Bit34Games.Unity.Input
             _pointers.Remove(pointerData);
         }
 
-        private static void UpdatePointer(PointerInputData2 pointerData, Vector2 newPosition, GameObject newObjectUnderPointer)
+        private static void UpdatePointer(PointerInputData pointerData, Vector2 newPosition, GameObject newObjectUnderPointer)
         {
+            //  Pointer moves
+            if (pointerData.CurrentPosition != newPosition)
+            {
+                pointerData.UpdatePosition(newPosition);
+                SendPointerMove(pointerData.pointerId, pointerData.CurrentPosition, pointerData.ObjectUnder);
+            }
+
             //  Pointer leaves object
             if (pointerData.ObjectUnder != null && pointerData.ObjectUnder != newObjectUnderPointer)
             {
-                SendPointerLeave(pointerData.pointerId, newPosition, pointerData.ObjectUnder);
+                GameObject oldObject = pointerData.ObjectUnder;
                 pointerData.UpdateObjectUnder(null);
+                SendPointerLeave(pointerData.pointerId, pointerData.CurrentPosition, oldObject);
             }
 
             //  Pointer enters a new object
             if (pointerData.ObjectUnder == null && newObjectUnderPointer != null)
             {
                 pointerData.UpdateObjectUnder(newObjectUnderPointer);
-                SendPointerEnter(pointerData.pointerId, newPosition, newObjectUnderPointer);
+                SendPointerEnter(pointerData.pointerId, pointerData.CurrentPosition, pointerData.ObjectUnder);
             }
 
+            //  Check click cancel
             if (pointerData.State == PointerInputState.DragCandidate)
             {
                 Vector2  pointerMovement    = newPosition     - pointerData.StartPosition;
@@ -270,12 +297,6 @@ namespace Com.Bit34Games.Unity.Input
                     pointerData.ClickCanceled();
                     SendPointerClickCanceled(pointerData.pointerId, newPosition, newObjectUnderPointer);
                 }
-            }
-
-            if (pointerData.CurrentPosition != newPosition)
-            {
-                pointerData.UpdatePosition(newPosition);
-                SendPointerMove(pointerData.pointerId, newPosition, newObjectUnderPointer);
             }
         }
 

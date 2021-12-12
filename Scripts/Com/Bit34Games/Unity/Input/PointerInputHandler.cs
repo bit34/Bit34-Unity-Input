@@ -6,7 +6,7 @@ namespace Com.Bit34Games.Unity.Input
     public class PointerInputHandler : IPointerInputHandler
     {
         //  DELEGATES
-        public delegate void PointerDelegate(int id, Vector2 screenPosition, GameObject objectUnderPointer);
+        public delegate void PointerDelegate(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer);
 
 
         //  MEMBERS
@@ -44,13 +44,13 @@ namespace Com.Bit34Games.Unity.Input
 
 
         //  METHODS
-        public void OnPointerDown         (int id, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerDown         (id, screenPosition, objectUnderPointer); }
-        public void OnPointerMove         (int id, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerMove         (id, screenPosition, objectUnderPointer); }
-        public void OnPointerUp           (int id, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerUp           (id, screenPosition, objectUnderPointer); }
-        public void OnPointerClick        (int id, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerClick        (id, screenPosition, objectUnderPointer); }
-        public void OnPointerClickCanceled(int id, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerClickCanceled(id, screenPosition, objectUnderPointer); }
-        public void OnPointerEnter        (int id, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerEnter        (id, screenPosition, objectUnderPointer); }
-        public void OnPointerLeave        (int id, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerLeave        (id, screenPosition, objectUnderPointer); }
-        public void OnPointerCancel       (int id, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerCancel       (id, screenPosition, objectUnderPointer); }
+        public void OnPointerDown         (int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerDown         (pointerId, screenPosition, objectUnderPointer); }
+        public void OnPointerMove         (int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerMove         (pointerId, screenPosition, objectUnderPointer); }
+        public void OnPointerUp           (int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerUp           (pointerId, screenPosition, objectUnderPointer); }
+        public void OnPointerClick        (int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerClick        (pointerId, screenPosition, objectUnderPointer); }
+        public void OnPointerClickCanceled(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerClickCanceled(pointerId, screenPosition, objectUnderPointer); }
+        public void OnPointerEnter        (int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerEnter        (pointerId, screenPosition, objectUnderPointer); }
+        public void OnPointerLeave        (int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerLeave        (pointerId, screenPosition, objectUnderPointer); }
+        public void OnPointerCancel       (int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){ _onPointerCancel       (pointerId, screenPosition, objectUnderPointer); }
     }
 }

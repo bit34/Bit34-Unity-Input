@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Com.Bit34Games.Unity.Input
 {
 
-    public class PointerInputData2
+    public class PointerInputData
     {
         //  MEMBERS
         public readonly int      pointerId;
@@ -12,11 +12,10 @@ namespace Com.Bit34Games.Unity.Input
         public PointerInputState State           { get; private set; }
         public Vector2           StartPosition   { get; private set; }
         public Vector2           CurrentPosition { get; private set; }
-//        public Vector2           Movement        { get; private set; }
         public GameObject        ObjectUnder     { get; private set; }
 
         //  CONSTRUCTORS
-        public PointerInputData2(int pointerId, DateTime startTime, Vector2 startPosition, GameObject objectUnder)
+        public PointerInputData(int pointerId, DateTime startTime, Vector2 startPosition, GameObject objectUnder)
         {
             this.pointerId  = pointerId;
             this.startTime  = startTime;
@@ -24,7 +23,6 @@ namespace Com.Bit34Games.Unity.Input
             StartPosition   = startPosition;
             CurrentPosition = startPosition;
             ObjectUnder     = objectUnder;
-//            Movement        = new Vector2();
         }
 
         //  METHODS
@@ -38,11 +36,9 @@ namespace Com.Bit34Games.Unity.Input
             State = PointerInputState.Drag;
         }
 
-
         public void UpdatePosition(Vector2 position)
         {
             CurrentPosition = position;
-//            Movement        = CurrentPosition - StartPosition;
         }
 
         public void UpdateObjectUnder(GameObject objectUnder)

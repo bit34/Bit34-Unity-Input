@@ -30,7 +30,7 @@ namespace Com.Bit34Games.Unity.Input
             PreDestroy();
             if (!_isQuiting)
             {
-                InputManager2.Internal_ObjectDestroyed(this);
+                InputManager.Internal_ObjectDestroyed(this);
             }
         }
 
