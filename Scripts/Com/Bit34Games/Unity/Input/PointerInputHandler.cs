@@ -21,16 +21,14 @@ namespace Com.Bit34Games.Unity.Input
 
 
         //  CONSTRUCTORS
-        public PointerInputHandler(
-            PointerDelegate onPointerDown,
-            PointerDelegate onPointerMove,
-            PointerDelegate onPointerUp,
-            PointerDelegate onPointerClick,
-            PointerDelegate onPointerClickCanceled,
-            PointerDelegate onPointerEnter,
-            PointerDelegate onPointerLeave,
-            PointerDelegate onPointerCancel
-        )
+        public PointerInputHandler(PointerDelegate onPointerDown,
+                                   PointerDelegate onPointerMove,
+                                   PointerDelegate onPointerUp,
+                                   PointerDelegate onPointerClick,
+                                   PointerDelegate onPointerClickCanceled,
+                                   PointerDelegate onPointerEnter,
+                                   PointerDelegate onPointerLeave,
+                                   PointerDelegate onPointerCancel)
         {
             _onPointerDown          = onPointerDown;
             _onPointerMove          = onPointerMove;

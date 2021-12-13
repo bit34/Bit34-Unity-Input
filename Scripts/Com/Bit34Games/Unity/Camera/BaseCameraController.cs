@@ -1,29 +1,32 @@
 using UnityEngine;
 using Com.Bit34Games.Unity.Update;
+using Com.Bit34Games.Unity.Input;
 
-namespace Com.Bit34Games.Unity.Input
+namespace Com.Bit34Games.Unity.Camera
 {
     public abstract class BaseCameraController : ICameraController
     {
 
         //  MEMBERS
-        public bool   IsActive     { get; private set; }
-        public bool   IsDragging   { get; private set; }
-        public Camera ActiveCamera { get { return (_camera != null) ? _camera : Camera.main; } }
+        public bool               IsActive        { get; private set; }
+        public bool               IsDragging      { get; private set; }
+        public bool               UseScrollToZoom { get; protected set; }
+        public UnityEngine.Camera ActiveCamera    { get { return (_camera != null) ? _camera : UnityEngine.Camera.main; } }
         //      Shared
         protected Vector3           _cameraPosition;
+        protected float             _cameraPositionFollow;
         //      Internal
-        private Camera              _camera;
-        private float               _cameraPositionFollow;
+        private UnityEngine.Camera  _camera;
         private PointerInputHandler _pointerInputHandler;
+        private GestureInputHandler _gestureInputHandler;
         private int                 _draggingPointerId;
 
         //  CONSTRUCTOR
-        public BaseCameraController(Camera camera, float cameraPositionFollow)
+        public BaseCameraController(UnityEngine.Camera camera)
         {
             _camera               = camera;
             _cameraPosition       = ActiveCamera.transform.position;
-            _cameraPositionFollow = cameraPositionFollow;
+            _cameraPositionFollow = 0;
             _pointerInputHandler  = new PointerInputHandler(DoNothing,
                                                             OnPointerMove,
                                                             OnPointerUp,
@@ -32,7 +35,8 @@ namespace Com.Bit34Games.Unity.Input
                                                             DoNothing,
                                                             DoNothing,
                                                             DoNothing);
-            _draggingPointerId = PointerInputConstants.INVALID_POINTER_ID;
+            _gestureInputHandler  = new GestureInputHandler(OnScroll);
+            _draggingPointerId    = PointerInputConstants.INVALID_POINTER_ID;
         }
 
         //  METHODS
@@ -45,18 +49,28 @@ namespace Com.Bit34Games.Unity.Input
                 if (IsActive)
                 {
                     UpdateManager.Add(UpdateCallback, this, null, UpdateTimeTypes.Utc, UpdateCallbackTypes.MonoBehaviourLateUpdate);
-                    InputManager.AddHandler(_pointerInputHandler);
+                    InputManager.AddPointerHandler(_pointerInputHandler);
+                    InputManager.AddGestureHandler(_gestureInputHandler);
                 }
                 else
                 {
                     UpdateManager.RemoveAllFrom(this);
-                    InputManager.RemoveHandler(_pointerInputHandler);
+                    InputManager.RemovePointerHandler(_pointerInputHandler);
+                    InputManager.RemoveGestureHandler(_gestureInputHandler);
 
                     IsDragging = false;
                     _draggingPointerId = PointerInputConstants.INVALID_POINTER_ID;
                 }
             }
         }
+
+        private void UpdateCallback()
+        {
+            InterpolateZoom();
+            InterpolatePosition();
+        }
+
+#region Movement
 
         public abstract void SetPosition(Vector3 cameraPosition, bool immediately);
 
@@ -70,13 +84,30 @@ namespace Com.Bit34Games.Unity.Input
             }
         }
 
-        protected abstract void StartPointerDrag(Vector2 screenPosition);
-        protected abstract void UpdatePointerDrag(Vector2 screenPosition);
+        protected abstract void ConstraintPosition();
 
-        private void UpdateCallback()
+        protected virtual void  InterpolatePosition()
         {
             ActiveCamera.transform.position = Vector3.Lerp(ActiveCamera.transform.position, _cameraPosition, _cameraPositionFollow);
         }
+
+        protected abstract void StartPointerDrag(Vector2 screenPosition);
+
+        protected abstract void UpdatePointerDrag(Vector2 screenPosition);
+
+#endregion
+
+#region Zoom
+
+        protected abstract void ApplyZoomFromScroll(Vector2 movement);
+
+        protected abstract void InterpolateZoom();
+
+        protected abstract void ConstraintZoom();
+     
+#endregion
+
+#region Input callbacks
 
         private void DoNothing(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){}
         
@@ -96,5 +127,17 @@ namespace Com.Bit34Games.Unity.Input
                 _draggingPointerId = PointerInputConstants.INVALID_POINTER_ID;
             }
         }
+
+        private void OnScroll(Vector2 movement)
+        {
+            if (UseScrollToZoom)
+            {
+                ApplyZoomFromScroll(movement);
+            }
+        }
+     
+#endregion
+
+
     }
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Com.Bit34Games.Unity.Input
+namespace Com.Bit34Games.Unity.Camera
 {
     public interface ICameraController
     {

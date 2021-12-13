@@ -28,6 +28,7 @@ namespace Com.Bit34Games.Unity.Input
         private static InputManagerComponent        _component;
         private static LinkedList<PointerInputData> _pointers;
         private static List<IPointerInputHandler>   _pointerHandlers;
+        private static List<IGestureInputHandler>   _gestureHandlers;
         private static PointerInputData             _mousePointerData;
 
         //  METHODS
@@ -58,6 +59,7 @@ namespace Com.Bit34Games.Unity.Input
 
             _pointers        = new LinkedList<PointerInputData>();
             _pointerHandlers = new List<IPointerInputHandler>();
+            _gestureHandlers = new List<IGestureInputHandler>();
 
             if (UsingMouse)
             {
@@ -65,14 +67,24 @@ namespace Com.Bit34Games.Unity.Input
             }
         }
 
-        public static void AddHandler(IPointerInputHandler pointerHandler)
+        public static void AddPointerHandler(IPointerInputHandler handler)
         {
-            _pointerHandlers.Add(pointerHandler);
+            _pointerHandlers.Add(handler);
         }
 
-        public static void RemoveHandler(IPointerInputHandler inputHandler)
+        public static void RemovePointerHandler(IPointerInputHandler handler)
         {
-            _pointerHandlers.Remove(inputHandler);
+            _pointerHandlers.Remove(handler);
+        }
+
+        public static void AddGestureHandler(IGestureInputHandler handler)
+        {
+            _gestureHandlers.Add(handler);
+        }
+
+        public static void RemoveGestureHandler(IGestureInputHandler handler)
+        {
+            _gestureHandlers.Remove(handler);
         }
 
         public static bool GetPointerPosition(int pointerId, out Vector2 startPosition, out Vector2 currentPosition)
@@ -121,9 +133,9 @@ namespace Com.Bit34Games.Unity.Input
         {
             GameObject hitObject = null;
 
-            Camera camera      = Camera.main;
-            Ray    ray         = camera.ScreenPointToRay(pointerScreenPosition);
-            float  maxDistance = float.MaxValue;
+            UnityEngine.Camera camera      = UnityEngine.Camera.main;
+            Ray                ray         = camera.ScreenPointToRay(pointerScreenPosition);
+            float              maxDistance = float.MaxValue;
 //            Debug.DrawRay(ray.origin, ray.direction, Color.magenta, 1);
 
             RaycastHit hit3D;
@@ -174,6 +186,8 @@ namespace Com.Bit34Games.Unity.Input
             CheckMouseButton(PointerInputConstants.MOUSE_LEFT_BUTTON,   PointerInputConstants.MOUSE_LEFT_DRAG_POINTER_ID,   newMousePosition, newObjectUnderPointer);
             CheckMouseButton(PointerInputConstants.MOUSE_RIGHT_BUTTON,  PointerInputConstants.MOUSE_RIGHT_DRAG_POINTER_ID,  newMousePosition, newObjectUnderPointer);
             CheckMouseButton(PointerInputConstants.MOUSE_MIDDLE_BUTTON, PointerInputConstants.MOUSE_MIDDLE_DRAG_POINTER_ID, newMousePosition, newObjectUnderPointer);
+
+            CheckMouseWheel();
         }
 
         private static void CheckMouseButton(int buttonId, int pointerId, Vector2 newPosition, GameObject newObjectUnderPointer)
@@ -209,6 +223,22 @@ namespace Com.Bit34Games.Unity.Input
             }
         }
 
+        private static void CheckMouseWheel()
+        {
+            //  Should not be tracked?
+            if (_uiBlocksPointers && 
+                (EventSystem.current!=null && EventSystem.current.IsPointerOverGameObject()))
+            {
+                return;
+            }
+
+            if (UnityEngine.Input.mouseScrollDelta.magnitude != 0)
+            {
+                SendScroll(UnityEngine.Input.mouseScrollDelta);
+            }
+            
+        }
+
 #endregion
 
 #region Pointer Methods
@@ -236,17 +266,17 @@ namespace Com.Bit34Games.Unity.Input
             //  Pointer started on an object
             if(newObjectUnderPointer != null)
             {
-//XX                SendPointerEnter(pointerId, newPosition, newObjectUnderPointer);
+                SendPointerEnter(pointerId, newPosition, newObjectUnderPointer);
             }
             SendPointerDown(pointerId, newPosition, newObjectUnderPointer);
         }
 
         private static void RemovePointer(PointerInputData pointerData, Vector2 newPosition, GameObject newObjectUnderPointer)
         {
-//XX            if (pointerData.ObjectUnder != null)
-//XX            {
-//XX                SendPointerLeave(pointerData.pointerId, newPosition, pointerData.ObjectUnder);
-//XX            }
+            if (pointerData.ObjectUnder != null)
+            {
+                SendPointerLeave(pointerData.pointerId, newPosition, pointerData.ObjectUnder);
+            }
 
             if (pointerData.State == PointerInputState.DragCandidate)
             {
@@ -302,7 +332,7 @@ namespace Com.Bit34Games.Unity.Input
 
 #endregion
 
-#region Pointer callbacks
+#region Handlers call helpers
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SendPointerDown(int pointerId, Vector2 position, GameObject objectUnderPointer)
@@ -364,6 +394,15 @@ namespace Com.Bit34Games.Unity.Input
             for (int i = 0; i < _pointerHandlers.Count; i++)
             {
                 _pointerHandlers[i].OnPointerLeave(pointerId, position, objectUnderPointer);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SendScroll(Vector2 movement)
+        {
+            for (int i = 0; i < _gestureHandlers.Count; i++)
+            {
+                _gestureHandlers[i].OnScroll(movement);
             }
         }
 
