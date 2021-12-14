@@ -8,10 +8,6 @@ namespace Com.Bit34Games.Unity.Input
         public const float DEFAULT_CLICK_CANCEL_MOVEMENT_PIXELS = 4;
         public const float DEFAULT_CLICK_CANCEL_TIMEOUT_SECONDS = 0.2f;
 
-        public const int MOUSE_LEFT_BUTTON   = 0;
-        public const int MOUSE_RIGHT_BUTTON  = 1;
-        public const int MOUSE_MIDDLE_BUTTON = 2;
-
         public const int INVALID_POINTER_ID           = int.MinValue;
         public const int MOUSE_POINTER_ID             = -1;
         public const int MOUSE_LEFT_DRAG_POINTER_ID   = -2;

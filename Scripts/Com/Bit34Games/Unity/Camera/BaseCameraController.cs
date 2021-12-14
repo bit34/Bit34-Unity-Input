@@ -12,9 +12,10 @@ namespace Com.Bit34Games.Unity.Camera
         public bool               IsDragging      { get; private set; }
         public bool               UseScrollToZoom { get; protected set; }
         public UnityEngine.Camera ActiveCamera    { get { return (_camera != null) ? _camera : UnityEngine.Camera.main; } }
+        public Vector3            CameraPosition  { get { return _cameraPosition; } }
         //      Shared
-        protected Vector3           _cameraPosition;
-        protected float             _cameraPositionFollow;
+        protected Vector3 _cameraPosition;
+        protected float   _cameraPositionFollow;
         //      Internal
         private UnityEngine.Camera  _camera;
         private PointerInputHandler _pointerInputHandler;
@@ -27,14 +28,7 @@ namespace Com.Bit34Games.Unity.Camera
             _camera               = camera;
             _cameraPosition       = ActiveCamera.transform.position;
             _cameraPositionFollow = 0;
-            _pointerInputHandler  = new PointerInputHandler(DoNothing,
-                                                            OnPointerMove,
-                                                            OnPointerUp,
-                                                            DoNothing,
-                                                            DoNothing,
-                                                            DoNothing,
-                                                            DoNothing,
-                                                            DoNothing);
+            _pointerInputHandler  = new PointerInputHandler(DoNothing, OnPointerMove, OnPointerUp, DoNothing, DoNothing, DoNothing, DoNothing, DoNothing);
             _gestureInputHandler  = new GestureInputHandler(OnScroll);
             _draggingPointerId    = PointerInputConstants.INVALID_POINTER_ID;
         }
@@ -137,7 +131,6 @@ namespace Com.Bit34Games.Unity.Camera
         }
      
 #endregion
-
 
     }
 }

@@ -8,6 +8,11 @@ namespace Com.Bit34Games.Unity.Input
 {
     public class InputManager
     {
+        //  CONSTANTS
+        private const int UNITY_MOUSE_LEFT_BUTTON   = 0;
+        private const int UNITY_MOUSE_RIGHT_BUTTON  = 1;
+        private const int UNITY_MOUSE_MIDDLE_BUTTON = 2;
+
         //	MEMBERS
         public static bool UsingMouse
         {
@@ -19,6 +24,10 @@ namespace Com.Bit34Games.Unity.Input
                 return false;
 #endif
             }
+        }
+        public static int PointerCount
+        {
+            get { return _pointers.Count; }
         }
         //      Internal
         private static int                          _colliderMask;
@@ -65,6 +74,11 @@ namespace Com.Bit34Games.Unity.Input
             {
                 InitMouse();
             }
+        }
+
+        public static void SetColliderMask(int colliderMask)
+        {
+            _colliderMask = colliderMask;
         }
 
         public static void AddPointerHandler(IPointerInputHandler handler)
@@ -183,9 +197,9 @@ namespace Com.Bit34Games.Unity.Input
 
             UpdatePointer(_mousePointerData, newMousePosition, newObjectUnderPointer);
 
-            CheckMouseButton(PointerInputConstants.MOUSE_LEFT_BUTTON,   PointerInputConstants.MOUSE_LEFT_DRAG_POINTER_ID,   newMousePosition, newObjectUnderPointer);
-            CheckMouseButton(PointerInputConstants.MOUSE_RIGHT_BUTTON,  PointerInputConstants.MOUSE_RIGHT_DRAG_POINTER_ID,  newMousePosition, newObjectUnderPointer);
-            CheckMouseButton(PointerInputConstants.MOUSE_MIDDLE_BUTTON, PointerInputConstants.MOUSE_MIDDLE_DRAG_POINTER_ID, newMousePosition, newObjectUnderPointer);
+            CheckMouseButton(UNITY_MOUSE_LEFT_BUTTON,   PointerInputConstants.MOUSE_LEFT_DRAG_POINTER_ID,   newMousePosition, newObjectUnderPointer);
+            CheckMouseButton(UNITY_MOUSE_RIGHT_BUTTON,  PointerInputConstants.MOUSE_RIGHT_DRAG_POINTER_ID,  newMousePosition, newObjectUnderPointer);
+            CheckMouseButton(UNITY_MOUSE_MIDDLE_BUTTON, PointerInputConstants.MOUSE_MIDDLE_DRAG_POINTER_ID, newMousePosition, newObjectUnderPointer);
 
             CheckMouseWheel();
         }

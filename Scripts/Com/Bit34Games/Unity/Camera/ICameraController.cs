@@ -5,8 +5,9 @@ namespace Com.Bit34Games.Unity.Camera
     public interface ICameraController
     {
         //  MEMBERS
-        bool IsActive   { get; }
-        bool IsDragging { get; }
+        bool    IsActive       { get; }
+        bool    IsDragging     { get; }
+        Vector3 CameraPosition { get; }
 
         //  METHODS
         void SetActivate(bool state);
