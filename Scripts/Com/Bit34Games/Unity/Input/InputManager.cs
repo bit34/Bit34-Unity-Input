@@ -39,6 +39,7 @@ namespace Com.Bit34Games.Unity.Input
         private static List<IPointerInputHandler>   _pointerHandlers;
         private static List<IGestureInputHandler>   _gestureHandlers;
         private static PointerInputData             _mousePointerData;
+        private static List<KeyInputGroupData>      _keyInputGroups;
 
         //  METHODS
         public static void Initialize()
@@ -69,6 +70,7 @@ namespace Com.Bit34Games.Unity.Input
             _pointers        = new LinkedList<PointerInputData>();
             _pointerHandlers = new List<IPointerInputHandler>();
             _gestureHandlers = new List<IGestureInputHandler>();
+            _keyInputGroups  = new List<KeyInputGroupData>();
 
             if (UsingMouse)
             {
@@ -91,16 +93,6 @@ namespace Com.Bit34Games.Unity.Input
             _pointerHandlers.Remove(handler);
         }
 
-        public static void AddGestureHandler(IGestureInputHandler handler)
-        {
-            _gestureHandlers.Add(handler);
-        }
-
-        public static void RemoveGestureHandler(IGestureInputHandler handler)
-        {
-            _gestureHandlers.Remove(handler);
-        }
-
         public static bool GetPointerPosition(int pointerId, out Vector2 startPosition, out Vector2 currentPosition)
         {
             PointerInputData pointerData = GetPointerData(pointerId);
@@ -113,6 +105,69 @@ namespace Com.Bit34Games.Unity.Input
             startPosition = Vector2.zero;
             currentPosition = Vector2.zero;
             return false;
+        }
+
+        public static void AddGestureHandler(IGestureInputHandler handler)
+        {
+            _gestureHandlers.Add(handler);
+        }
+
+        public static void RemoveGestureHandler(IGestureInputHandler handler)
+        {
+            _gestureHandlers.Remove(handler);
+        }
+
+        public static void AddKeyboardInput(int groupId, KeyCode[] modifierKeyCodes, KeyCode keyCode, bool keyStateToAction, Action action)
+        {
+            KeyInputGroupData group = null;
+
+            for (int g = 0; g < _keyInputGroups.Count; g++)
+            {
+                if (_keyInputGroups[g].groupId == groupId)
+                {
+                    group = _keyInputGroups[g];
+                    break;
+                }
+            }
+
+            if (group == null)
+            {
+                group = new KeyInputGroupData(KeyInputSourceTypes.Keyboard, groupId);
+                _keyInputGroups.Add(group);
+            }
+
+            int[] intModifierKeyCodes = null;
+            if (modifierKeyCodes != null)
+            {
+                intModifierKeyCodes = new int[modifierKeyCodes.Length];
+                for (int i = 0; i < modifierKeyCodes.Length; i++) { intModifierKeyCodes[i] = (int)modifierKeyCodes[i]; }
+            }
+
+            group.keyInputs.Add(new KeyInputData(intModifierKeyCodes, (int)keyCode, keyStateToAction, action));
+        }
+
+        public static void RemoveKeyGroup(int groupId)
+        {
+            for (int g = 0; g < _keyInputGroups.Count; g++)
+            {
+                if (_keyInputGroups[g].groupId == groupId)
+                {
+                    _keyInputGroups.RemoveAt(g);
+                    return;
+                }
+            }
+        }
+
+        public static void SetKeyGroupState(int groupId, bool state)
+        {
+            for (int g = 0; g < _keyInputGroups.Count; g++)
+            {
+                if (_keyInputGroups[g].groupId == groupId)
+                {
+                    _keyInputGroups[g].state = state;
+                    return;
+                }
+            }
         }
 
         public static void Internal_ObjectDestroyed(InputObjectComponent inputObject)
@@ -139,6 +194,7 @@ namespace Com.Bit34Games.Unity.Input
             {
                 UpdateMouse();
             }
+            UpdateKeyboard();
         }
 
 #region Helpers
@@ -150,7 +206,7 @@ namespace Com.Bit34Games.Unity.Input
             UnityEngine.Camera camera      = UnityEngine.Camera.main;
             Ray                ray         = camera.ScreenPointToRay(pointerScreenPosition);
             float              maxDistance = float.MaxValue;
-//            Debug.DrawRay(ray.origin, ray.direction, Color.magenta, 1);
+            // Debug.DrawRay(ray.origin, ray.direction, Color.magenta, 1);
 
             RaycastHit hit3D;
             Physics.Raycast(ray.origin, ray.direction, out hit3D, float.MaxValue, _colliderMask);
@@ -292,7 +348,7 @@ namespace Com.Bit34Games.Unity.Input
                 SendPointerLeave(pointerData.pointerId, newPosition, pointerData.ObjectUnder);
             }
 
-            if (pointerData.State == PointerInputState.DragCandidate)
+            if (pointerData.State == PointerInputStates.DragCandidate)
             {
                 pointerData.Clicked();
                 SendPointerClick(pointerData.pointerId, newPosition, pointerData.ObjectUnder);
@@ -330,7 +386,7 @@ namespace Com.Bit34Games.Unity.Input
             }
 
             //  Check click cancel
-            if (pointerData.State == PointerInputState.DragCandidate)
+            if (pointerData.State == PointerInputStates.DragCandidate)
             {
                 Vector2  pointerMovement    = newPosition     - pointerData.StartPosition;
                 TimeSpan pointerElapsedTime = DateTime.UtcNow - pointerData.startTime;
@@ -422,5 +478,61 @@ namespace Com.Bit34Games.Unity.Input
 
 #endregion
 
+#region Keyboard Methods
+
+    public static void UpdateKeyboard()
+    {
+        if (EventSystem.current.currentSelectedGameObject != null)
+        {
+            return;
+        }
+
+        for (int g = 0; g < _keyInputGroups.Count; g++)
+        {
+            KeyInputGroupData keyInputGroup = _keyInputGroups[g];
+            if (keyInputGroup.source == KeyInputSourceTypes.Keyboard &&
+                keyInputGroup.state == true)
+            {
+                for (int k = 0; k < keyInputGroup.keyInputs.Count; k++)
+                {
+                    KeyInputData keyInput = keyInputGroup.keyInputs[k];
+                    if (keyInput.keyStateToAction == true)
+                    {
+                        if (UnityEngine.Input.GetKeyDown((KeyCode)keyInput.keyCode) &&
+                            CheckKeyboardModifierKeys(keyInput.modifierKeyCodes))
+                        {
+                            keyInput.action();
+                        }
+                    }
+                    else
+                    if (keyInput.keyStateToAction == false)
+                    {
+                        if (UnityEngine.Input.GetKeyUp((KeyCode)keyInput.keyCode) &&
+                            CheckKeyboardModifierKeys(keyInput.modifierKeyCodes))
+                        {
+                            keyInput.action();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static bool CheckKeyboardModifierKeys(int[] modifierKeyCodes)
+    {
+        if (modifierKeyCodes != null)
+        {
+            for (int k = 0; k < modifierKeyCodes.Length; k++)
+            {
+                if (UnityEngine.Input.GetKey((KeyCode)modifierKeyCodes[k]) == false)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+     
+#endregion
     }
 }

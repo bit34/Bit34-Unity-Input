@@ -7,19 +7,19 @@ namespace Com.Bit34Games.Unity.Input
     public class PointerInputData
     {
         //  MEMBERS
-        public readonly int      pointerId;
-        public readonly DateTime startTime;
-        public PointerInputState State           { get; private set; }
-        public Vector2           StartPosition   { get; private set; }
-        public Vector2           CurrentPosition { get; private set; }
-        public GameObject        ObjectUnder     { get; private set; }
+        public readonly int       pointerId;
+        public readonly DateTime  startTime;
+        public PointerInputStates State           { get; private set; }
+        public Vector2            StartPosition   { get; private set; }
+        public Vector2            CurrentPosition { get; private set; }
+        public GameObject         ObjectUnder     { get; private set; }
 
         //  CONSTRUCTORS
         public PointerInputData(int pointerId, DateTime startTime, Vector2 startPosition, GameObject objectUnder)
         {
             this.pointerId  = pointerId;
             this.startTime  = startTime;
-            State           = PointerInputState.DragCandidate;
+            State           = PointerInputStates.DragCandidate;
             StartPosition   = startPosition;
             CurrentPosition = startPosition;
             ObjectUnder     = objectUnder;
@@ -28,12 +28,12 @@ namespace Com.Bit34Games.Unity.Input
         //  METHODS
         public void Clicked()
         {
-            State = PointerInputState.Click;
+            State = PointerInputStates.Click;
         }
 
         public void ClickCanceled()
         {
-            State = PointerInputState.Drag;
+            State = PointerInputStates.Drag;
         }
 
         public void UpdatePosition(Vector2 position)
