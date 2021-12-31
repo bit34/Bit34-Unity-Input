@@ -7,7 +7,7 @@ namespace Com.Bit34Games.Unity.Input
         //  METHODS
         void OnPointerDown(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer);
         void OnPointerMove(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer);
-        void OnPointerUp(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer);
+        void OnPointerUp(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer, bool willSendClick);
         void OnPointerClick(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer);
         void OnPointerClickCanceled(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer);
         void OnPointerEnter(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer);

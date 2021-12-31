@@ -5,6 +5,8 @@ namespace Com.Bit34Games.Unity.Camera
     public class TopDownCameraController : BaseCameraController
     {
         //  MEMBERS
+        public float    CameraMaxSize { get; private set; }
+        public float    CameraMinSize { get; private set; }
         //      Internal
         private float   _worldMinX;
         private float   _worldMaxX;
@@ -12,8 +14,6 @@ namespace Com.Bit34Games.Unity.Camera
         private float   _worldMaxZ;
         private Vector3 _dragStartWorldPosition;
         private float   _cameraSize;
-        public float    _cameraMaxSize;
-        public float    _cameraMinSize;
         private float   _cameraZoomFollow;
         private float   _scrollZoomMultiplier;
 
@@ -49,28 +49,60 @@ namespace Com.Bit34Games.Unity.Camera
                               float scrollZoomMultiplier)
         {
             _cameraZoomFollow     = cameraZoomFollow;
-            _cameraMinSize        = cameraMinimumSize;
-            _cameraMaxSize        = cameraMaximumSize;
+            CameraMinSize         = cameraMinimumSize;
+            CameraMaxSize         = cameraMaximumSize;
             UseScrollToZoom       = useScrollToZoom;
             _scrollZoomMultiplier = scrollZoomMultiplier;
-        }
-
-        public override void SetPosition(Vector3 cameraPosition, bool immediately)
-        {
-            Plane cameraPlane = new Plane(ActiveCamera.transform.forward, ActiveCamera.transform.position);
-            _cameraPosition = cameraPlane.ClosestPointOnPlane(cameraPosition);
-            ConstraintPosition();
-            if(IsActive && immediately)
-            {
-                ActiveCamera.transform.position = _cameraPosition;
-            }
         }
 
         public void SetSize(float cameraSize)
         {
             _cameraSize = cameraSize;
-            ConstraintZoom();
+
+            if (IsActive)
+            {
+                ConstraintZoom();
+                ConstraintPosition();
+            }
+        }
+
+#region BasePointerDragController implementations
+    
+        protected override void DragStarted()
+        {
+            _dragStartWorldPosition = ActiveCamera.ScreenToWorldPoint(DragStartScreenPosition);
+        }
+
+        protected override void DragUpdated()
+        {
+            Vector3 currentWorldPosition = ActiveCamera.ScreenToWorldPoint(DragCurrentScreenPosition);
+            Vector3 worldMovement        = currentWorldPosition - _dragStartWorldPosition;
+
+            _cameraPosition -= worldMovement;
             ConstraintPosition();
+            ActiveCamera.transform.position = _cameraPosition;
+        }
+
+        protected override void DragEnded() { }
+        protected override void DragCancelled() { }
+
+#endregion
+
+#region BaseCameraController implementations
+     
+        public override void SetPosition(Vector3 cameraPosition, bool immediately)
+        {
+            Plane cameraPlane = new Plane(ActiveCamera.transform.forward, ActiveCamera.transform.position);
+            _cameraPosition = cameraPlane.ClosestPointOnPlane(cameraPosition);
+            
+            if(IsActive)
+            {
+                ConstraintPosition();
+                if (immediately)
+                {
+                    ActiveCamera.transform.position = _cameraPosition;
+                }
+            }
         }
 
         protected override void ConstraintPosition()
@@ -107,21 +139,6 @@ namespace Com.Bit34Games.Unity.Camera
             }
         }
 
-        protected override void StartPointerDrag(Vector2 screenPosition)
-        {
-            _dragStartWorldPosition = ActiveCamera.ScreenToWorldPoint(screenPosition);
-        }
-
-        protected override void UpdatePointerDrag(Vector2 screenPosition)
-        {
-            Vector3 currentWorldPosition = ActiveCamera.ScreenToWorldPoint(screenPosition);
-            Vector3 worldMovement        = currentWorldPosition - _dragStartWorldPosition;
-
-            _cameraPosition -= worldMovement;
-            ConstraintPosition();
-            ActiveCamera.transform.position = _cameraPosition;
-        }
-
         protected override void ApplyZoomFromScroll(Vector2 movement)
         {
 #if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
@@ -137,8 +154,8 @@ namespace Com.Bit34Games.Unity.Camera
 
         protected override void ConstraintZoom()
         {
-            _cameraSize = Mathf.Min(_cameraSize, _cameraMaxSize);
-            _cameraSize = Mathf.Max(_cameraSize, _cameraMinSize);
+            _cameraSize = Mathf.Min(_cameraSize, CameraMaxSize);
+            _cameraSize = Mathf.Max(_cameraSize, CameraMinSize);
 
             float worldHalfWidth  = (_worldMaxX - _worldMinX) * 0.5f;
             float worldHalfHeight = (_worldMaxZ - _worldMinZ) * 0.5f;
@@ -151,6 +168,8 @@ namespace Com.Bit34Games.Unity.Camera
         {
             ActiveCamera.orthographicSize = Mathf.Lerp(ActiveCamera.orthographicSize, _cameraSize, _cameraZoomFollow);
         }
+
+#endregion
 
     }
 }

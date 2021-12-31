@@ -4,12 +4,11 @@ using Com.Bit34Games.Unity.Input;
 
 namespace Com.Bit34Games.Unity.Camera
 {
-    public abstract class BaseCameraController : ICameraController
+    public abstract class BaseCameraController : BasePointerDragController, ICameraController
     {
-
         //  MEMBERS
+        public override bool      CanDrag         { get { return IsActive; } }
         public bool               IsActive        { get; private set; }
-        public bool               IsDragging      { get; private set; }
         public bool               UseScrollToZoom { get; protected set; }
         public UnityEngine.Camera ActiveCamera    { get { return (_camera != null) ? _camera : UnityEngine.Camera.main; } }
         public Vector3            CameraPosition  { get { return _cameraPosition; } }
@@ -18,9 +17,7 @@ namespace Com.Bit34Games.Unity.Camera
         protected float   _cameraPositionFollow;
         //      Internal
         private UnityEngine.Camera  _camera;
-        private PointerInputHandler _pointerInputHandler;
         private GestureInputHandler _gestureInputHandler;
-        private int                 _draggingPointerId;
 
         //  CONSTRUCTOR
         public BaseCameraController(UnityEngine.Camera camera)
@@ -28,9 +25,7 @@ namespace Com.Bit34Games.Unity.Camera
             _camera               = camera;
             _cameraPosition       = ActiveCamera.transform.position;
             _cameraPositionFollow = 0;
-            _pointerInputHandler  = new PointerInputHandler(DoNothing, OnPointerMove, OnPointerUp, DoNothing, DoNothing, DoNothing, DoNothing, DoNothing);
             _gestureInputHandler  = new GestureInputHandler(OnScroll);
-            _draggingPointerId    = PointerInputConstants.INVALID_POINTER_ID;
         }
 
         //  METHODS
@@ -43,17 +38,19 @@ namespace Com.Bit34Games.Unity.Camera
                 if (IsActive)
                 {
                     UpdateManager.Add(UpdateCallback, this, null, UpdateTimeTypes.Utc, UpdateCallbackTypes.MonoBehaviourLateUpdate);
-                    InputManager.AddPointerHandler(_pointerInputHandler);
+                    
                     InputManager.AddGestureHandler(_gestureInputHandler);
                 }
                 else
                 {
                     UpdateManager.RemoveAllFrom(this);
-                    InputManager.RemovePointerHandler(_pointerInputHandler);
+                    
                     InputManager.RemoveGestureHandler(_gestureInputHandler);
 
-                    IsDragging = false;
-                    _draggingPointerId = PointerInputConstants.INVALID_POINTER_ID;
+                    if (IsDragging)
+                    {
+                        CancelDrag();
+                    }
                 }
             }
         }
@@ -68,16 +65,6 @@ namespace Com.Bit34Games.Unity.Camera
 
         public abstract void SetPosition(Vector3 cameraPosition, bool immediately);
 
-        public void DragWithPointer(int pointerId, Vector2 screenPosition)
-        {
-            if (IsActive)
-            {
-                IsDragging = true;
-                _draggingPointerId = pointerId;
-                StartPointerDrag(screenPosition);
-            }
-        }
-
         protected abstract void ConstraintPosition();
 
         protected virtual void  InterpolatePosition()
@@ -85,9 +72,6 @@ namespace Com.Bit34Games.Unity.Camera
             ActiveCamera.transform.position = Vector3.Lerp(ActiveCamera.transform.position, _cameraPosition, _cameraPositionFollow);
         }
 
-        protected abstract void StartPointerDrag(Vector2 screenPosition);
-
-        protected abstract void UpdatePointerDrag(Vector2 screenPosition);
 
 #endregion
 
@@ -102,25 +86,6 @@ namespace Com.Bit34Games.Unity.Camera
 #endregion
 
 #region Input callbacks
-
-        private void DoNothing(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer){}
-        
-        private void OnPointerMove(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer)
-        {
-            if (pointerId == _draggingPointerId)
-            {
-                UpdatePointerDrag(screenPosition);
-            }
-        }
-
-        private void OnPointerUp(int pointerId, Vector2 screenPosition, GameObject objectUnderPointer)
-        {
-            if (pointerId == _draggingPointerId)
-            {
-                IsDragging = false;
-                _draggingPointerId = PointerInputConstants.INVALID_POINTER_ID;
-            }
-        }
 
         private void OnScroll(Vector2 movement)
         {

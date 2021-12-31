@@ -19,7 +19,7 @@ namespace Com.Bit34Games.Unity.Input
         {
             this.pointerId  = pointerId;
             this.startTime  = startTime;
-            State           = PointerInputStates.DragCandidate;
+            State           = PointerInputStates.ClickCandidate;
             StartPosition   = startPosition;
             CurrentPosition = startPosition;
             ObjectUnder     = objectUnder;
